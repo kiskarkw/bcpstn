@@ -12,7 +12,7 @@ function dateToYmdhms(date) {
     return tempDate;
 }
 
-function writeLog(logLevel, message, errorObject){
+function writeLog2(logLevel, message, errorObject){
     try {        
         var logLevel = logLevel;
         var message = message;
