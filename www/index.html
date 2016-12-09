@@ -1,0 +1,120 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta http-equiv="Content-Security-Policy" content="default-src * data:; style-src * 'unsafe-inline'; script-src * 'unsafe-inline' 'unsafe-eval'">
+    <script src="components/loader.js"></script>
+    <script src="lib/onsenui/js/onsenui.min.js"></script>
+    
+    <link rel="stylesheet" href="components/loader.css">
+    <link rel="stylesheet" href="lib/onsenui/css/onsenui.css">
+    <link rel="stylesheet" href="lib/onsenui/css/onsen-css-components.css">
+    <link rel="stylesheet" href="css/style.css">
+    
+    <script src="http://maps.googleapis.com/maps/api/js"></script>
+    
+
+    <script src=./js/writeLog.js></script>
+    <script src=./js/drawMap.js></script>
+    <script src=./js/gatherGps.js></script>
+    <script src=./js/gatherBeacon.js></script>
+    <script src=./js/sendJson.js></script>
+    <script src=./js/analyzeJson.js></script>
+    <script src=./js/initFlgs.js></script>
+    
+    <script src=./js/drawMapDummy.js></script>
+    
+    <script>
+        // 広域関数定義 BGN
+            beaconAry = {}; // Beacon受信用オブジェクト
+            flgCancel = false;
+            flgRunning = false;
+            var deviceId; // Monaca(Cordova)が取得する端末ID
+            var roundPow = Math.pow(10, 6); // 経緯度の丸め桁
+            var msecInterval = 500; // 処理インターバル(ミリ秒)。この間隔でキャンセル操作をポーリングする。
+            var gpsTimeout = 5000; // GPS収集のタイムアウト
+            var xhrTimeout = 10000; // HTTP接続のタイムアウト
+            var maxLogChrCnt = 5000; // ログ出力上限文字数
+            
+            // Azure接続情報
+            var urlAzure = "https://ussouthcentral.services.azureml.net/workspaces/96ebe255e62f48fab4a8b88b2e12f83b/services/80f761551b1d4effa276d3201c26859b/execute?api-version=2.0&format=swagger";
+            var apikeyAzure = "Bearer LE51afhxJUlejulhQALcaKOXdEcLxI5HKr5vfhuWrec8D/6AmivDFZbI192dmWWPmwgje+wniIZ+9mMfr/tyLg==";
+            
+            // 対象とするBEACONのUUID
+            var beacons = [{
+                    uuid: '00000000-EBA8-1001-B000-001C4D9B8C4F',
+                    identifier: '1'
+                },
+                {
+                    uuid: '00000000-0000-0000-0000-000000000000',
+                    identifier: '2'
+                }
+            ];
+            
+            // フロア図の描画地点
+            var imageBounds = {
+                north: 35.656202,
+                south: 35.655626,
+                east: 139.762168,
+                west: 139.761479
+            };
+        // 広域関数定義 END
+        
+        document.addEventListener('deviceready', function() {
+            // HTMLエレメント定義 BGN 
+            var elemLog = document.getElementById("elemLog");
+            var elemCoordBoxLat = document.getElementById("elemCoordBoxLat");
+            var elemCoordBoxLng = document.getElementById("elemCoordBoxLng");
+            var elemCoordBoxFlr = document.getElementById("elemCoordBoxFlr");
+            var elemCfgMsec = document.getElementById("elemCfgMsec");
+            // HTMLエレメント定義 END
+            
+            gatherGps();
+            
+            monaca.getDeviceId (function(id) {
+                deviceId = id;
+            });
+            
+        }, false);
+    </script>
+</head>
+
+<body>
+<ons-page>
+<div id="elemMapCanvas" style="width:100vw; height:calc(100vh - 200px);"></div>
+
+<div style="background:#eeffff;">
+    <ons-row>
+        <ons-col width="10vw">Lat</ons-col>
+        <ons-col width="30vw"><div id="elemCoordBoxLat" style="overflow:hidden;"></div></ons-col>
+        <ons-col width="10vw">Lng</ons-col>
+        <ons-col width="30vw"><div id="elemCoordBoxLng" style="overflow:hidden;"></div></ons-col>
+        <ons-col width="10vw">Flr</ons-col>
+        <ons-col width="10vw"><div id="elemCoordBoxFlr" style="overflow:hidden;"></div></ons-col>
+    </ons-row>
+    <ons-row>
+        <ons-col width="30vw">gatherMsec</ons-col>
+        <ons-col>0<ons-range id="elemCfgMsec" style="width:80%;" min="0" max="120" value="5"></ons-range>120</ons-col>
+    </ons-row>
+</div>
+<ons-row>
+    <ons-col>
+        <ons-button id="elemButtonPrediction" onclick="gatherBeacon('p')" style="padding:1px; margin:1px;">Prediction</ons-button>
+    </ons-col>
+    <ons-col>
+        <ons-button id="elemButtonTraining" onclick="gatherBeacon('t')" style="padding:1px; margin:1px;">Training</ons-button>
+    </ons-col>
+    <ons-col>
+        <ons-button id="elemButton" onclick="gatherGps()" style="padding:1px; margin:1px;">gatherGps</ons-button>
+    </ons-col>
+    <ons-col>
+        <ons-button id="elemButton" onclick="drawMap()" style="padding:1px; margin:1px;">drawMap</ons-button>
+    </ons-col>
+</ons-row>
+
+<div id="elemLog" style="font-size:9px; width:100vw; height:100px; background:#eeffff; overflow:auto;"></div>
+
+</ons-page>
+</body>
+</html>
